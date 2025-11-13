@@ -1,0 +1,7 @@
+{
+  "name": "CariocAI",
+  "description": "Una aplicación web para llevar el registro del puntaje en el juego de cartas Carioca. A web app to track scores for the Carioca card game.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
