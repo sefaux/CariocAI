@@ -94,6 +94,10 @@ export const es = {
 
   // Errors
   cardRecognitionError: 'No se pudieron reconocer las cartas. Intenta con una mejor foto.',
+  scanError_BLURRY: 'La imagen está muy borrosa. Intenta con una foto más nítida.',
+  scanError_BAD_LIGHTING: 'Mala iluminación o mucho reflejo. Busca un lugar mejor iluminado.',
+  scanError_NO_CARDS_DETECTED: 'No se detectaron cartas. Asegúrate de que estén bien visibles en la foto.',
+  scanError_UNKNOWN: 'Ocurrió un error desconocido. Por favor, intenta de nuevo.',
 
   // Rounds
   roundName_two_sets: "2 Tríos",

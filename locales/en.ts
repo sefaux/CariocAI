@@ -94,6 +94,11 @@ export const en = {
   
   // Errors
   cardRecognitionError: 'Could not recognize the cards. Please try with a better picture.',
+  scanError_BLURRY: 'The image is too blurry. Please try with a sharper photo.',
+  scanError_BAD_LIGHTING: 'Poor lighting or too much glare. Please find a better-lit spot.',
+  scanError_NO_CARDS_DETECTED: 'No cards were detected. Make sure they are clearly visible in the photo.',
+  scanError_UNKNOWN: 'An unknown error occurred. Please try again.',
+
 
   // Rounds
   roundName_two_sets: "2 Sets",

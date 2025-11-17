@@ -257,7 +257,7 @@ const App: React.FC = () => {
   const handleImageScanned = async (imageData: string) => {
     setIsLoading(true);
     setError(null);
-    setGamePhase(GamePhase.ScoreInput); 
+    setGamePhase(GamePhase.ScoreInput);
 
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -266,29 +266,44 @@ const App: React.FC = () => {
         const schema = {
             type: Type.OBJECT,
             properties: {
+                status: { type: Type.STRING, enum: ['SUCCESS', 'ERROR'] },
+                errorCode: { type: Type.STRING, enum: ['BLURRY', 'BAD_LIGHTING', 'NO_CARDS_DETECTED', 'NONE'], description: "Code for the specific error" },
                 cards: {
                     type: Type.ARRAY,
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            rank: { type: Type.STRING, description: "Card rank (A, 2-10, J, Q, K, Joker)" },
-                            suit: { type: Type.STRING, description: "Card suit (use one of: Hearts, Diamonds, Clubs, Spades, Joker)" }
+                            rank: { type: Type.STRING },
+                            suit: { type: Type.STRING }
                         }
                     }
                 }
             }
         };
 
-        const prompt = `Analyze the image to identify all playing cards.
+        const prompt = `Analyze the image to identify playing cards and assess image quality.
 Your output MUST be a JSON object that strictly follows the provided schema.
-**CRITICAL INSTRUCTIONS TO AVOID ERRORS:**
-1. Your primary goal is to return a valid JSON response, NOT to fail.
-2. For every potential card you see, attempt to identify its rank and suit.
-3. Valid Ranks: 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'Joker'.
-4. Valid Suits: 'Hearts', 'Diamonds', 'Clubs', 'Spades', 'Joker'.
-5. **FAILURE AVOIDANCE RULE:** If you have ANY uncertainty about a card's rank or suit due to blur, angle, lighting, or any other issue, you MUST classify that card's rank AND suit as 'Joker'.
-6. If you cannot identify any cards at all, you MUST return a JSON object with an empty 'cards' array: {"cards": []}.
-7. DO NOT output any text or explanation outside of the JSON structure. Your entire response must be the JSON object.`;
+
+**ANALYSIS AND RESPONSE RULES:**
+
+1.  **FIRST, analyze image quality.**
+    *   If the image is significantly blurry or out of focus, respond with:
+        \`{"status": "ERROR", "errorCode": "BLURRY", "cards": []}\`
+    *   If the image has very poor lighting (too dark) or excessive glare, respond with:
+        \`{"status": "ERROR", "errorCode": "BAD_LIGHTING", "cards": []}\`
+
+2.  **SECOND, if image quality is acceptable, identify cards.**
+    *   If you cannot identify ANY cards, respond with:
+        \`{"status": "ERROR", "errorCode": "NO_CARDS_DETECTED", "cards": []}\`
+    *   If you can identify cards, respond with:
+        \`{"status": "SUCCESS", "errorCode": "NONE", "cards": [...]}\`
+
+3.  **CARD IDENTIFICATION RULES:**
+    *   Valid Ranks: 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'Joker'.
+    *   Valid Suits: 'Hearts', 'Diamonds', 'Clubs', 'Spades', 'Joker'.
+    *   **FAILURE AVOIDANCE:** If a specific card is hard to identify but others are clear, classify that single card's rank AND suit as 'Joker'. Your main goal is to avoid failing the request.
+
+4.  **DO NOT output any text or explanation outside of the JSON structure.**`;
 
         const response = await ai.models.generateContent({
             model,
@@ -306,11 +321,19 @@ Your output MUST be a JSON object that strictly follows the provided schema.
         
         const jsonText = response.text;
         const result = JSON.parse(jsonText);
-        const detectedCards: Card[] = result.cards || [];
-        const totalScore = detectedCards.reduce((sum, card) => sum + scoreCard(card.rank), 0);
-        
-        setLastScan({ image: imageData, cards: detectedCards, score: totalScore });
-        setGamePhase(GamePhase.ScanConfirmation);
+
+        if (result.status === 'SUCCESS') {
+            const detectedCards: Card[] = result.cards || [];
+            const totalScore = detectedCards.reduce((sum, card) => sum + scoreCard(card.rank), 0);
+            
+            setLastScan({ image: imageData, cards: detectedCards, score: totalScore });
+            setGamePhase(GamePhase.ScanConfirmation);
+        } else {
+            const errorCode = result.errorCode || 'UNKNOWN';
+            // Use a specific translation key for each error code
+            setError(t(`scanError_${errorCode}`));
+            setScanningPlayerId(null);
+        }
 
     } catch (e) {
         console.error("Card recognition API error:", e);
