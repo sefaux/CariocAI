@@ -15,6 +15,7 @@ export const en = {
   language: 'Language',
   rounds: 'Rounds',
   scores: 'Scores',
+  continueGame: 'Continue Game',
 
   // RoundWinnerSelection
   round: 'Round',
@@ -23,6 +24,8 @@ export const en = {
   skipRound: 'Skip Round',
   startNewGame: 'Start New Game',
   thirteenCardRoundInfo: 'ⓘ 13 cards are dealt in this round.',
+  changeRound: 'Change Round',
+  completed: 'Completed',
 
   // RoundScoreInput
   scorePoints: 'Points',
@@ -50,6 +53,7 @@ export const en = {
   cameraAccessError: 'Could not access the camera. Check permissions.',
   scannerHelperText: 'Make sure all cards are visible and close to the lens.',
   cancel: 'Cancel',
+  uploadPhoto: 'Upload Photo',
 
   // ScanConfirmation
   confirmScore: 'Confirm Score',

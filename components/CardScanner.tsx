@@ -9,6 +9,7 @@ interface CardScannerProps {
 const CardScanner: React.FC<CardScannerProps> = ({ onScan, onCancel }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
 
@@ -46,6 +47,24 @@ const CardScanner: React.FC<CardScannerProps> = ({ onScan, onCancel }) => {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) {
+          onScan(dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
       <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
@@ -53,12 +72,22 @@ const CardScanner: React.FC<CardScannerProps> = ({ onScan, onCancel }) => {
         <p className="font-semibold">{t('scannerHelperText')}</p>
       </div>
       <canvas ref={canvasRef} className="hidden" />
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleFileChange}
+      />
 
       {error && <div className="absolute top-4 p-4 bg-red-800 text-white rounded-md">{error}</div>}
       
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50 flex justify-center items-center space-x-4">
         <button onClick={onCancel} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
             {t('cancel')}
+        </button>
+         <button onClick={handleUploadClick} className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+            {t('uploadPhoto')}
         </button>
         <button onClick={handleCapture} className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-full transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

@@ -113,9 +113,11 @@ interface PlayerSetupProps {
   onRemovePlayer: (id: number) => void;
   onStartGame: () => void;
   setGameSettings: React.Dispatch<React.SetStateAction<GameSettings>>;
+  onContinueGame: () => void;
+  savedGameExists: boolean;
 }
 
-const PlayerSetup: React.FC<PlayerSetupProps> = ({ players, onAddPlayer, onRemovePlayer, onStartGame, gameSettings, setGameSettings }) => {
+const PlayerSetup: React.FC<PlayerSetupProps> = ({ players, onAddPlayer, onRemovePlayer, onStartGame, gameSettings, setGameSettings, onContinueGame, savedGameExists }) => {
   const [playerName, setPlayerName] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -172,12 +174,20 @@ const PlayerSetup: React.FC<PlayerSetupProps> = ({ players, onAddPlayer, onRemov
             </div>
 
             <div className="space-y-3 pt-4 border-t border-gray-200">
+                {savedGameExists && (
+                    <button
+                        onClick={onContinueGame}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 text-lg"
+                    >
+                        {t('continueGame')}
+                    </button>
+                )}
                 <button
                     onClick={onStartGame}
                     disabled={players.length < 2 || gameSettings.enabledRounds.length === 0}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed transition-all duration-200 text-lg"
                     >
-                    {t('startGame')}
+                    {savedGameExists ? t('startNewGame') : t('startGame')}
                 </button>
                 <button
                     onClick={() => setShowSettings(true)}

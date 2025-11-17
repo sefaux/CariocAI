@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Player } from '../types';
 import { useTranslation } from '../hooks/useTranslation';
+import ChangeRoundModal from './ChangeRoundModal';
 
 interface ActiveRound {
     key: string;
@@ -13,15 +14,30 @@ interface RoundWinnerSelectionProps {
   onSelectWinner: (winnerId: number) => void;
   onNewGame: () => void;
   onSkipRound: () => void;
+  onChangeRound: (newRoundKey: string) => void;
 }
 
-const RoundWinnerSelection: React.FC<RoundWinnerSelectionProps> = ({ players, currentRound, activeRounds, onSelectWinner, onNewGame, onSkipRound }) => {
+const RoundWinnerSelection: React.FC<RoundWinnerSelectionProps> = ({ players, currentRound, activeRounds, onSelectWinner, onNewGame, onSkipRound, onChangeRound }) => {
   const { t } = useTranslation();
   const round = activeRounds[currentRound];
-  const canSkip = ["three_runs", "dirty_run", "royal_run"].includes(round.key);
   const is13CardsRound = ["dirty_run", "royal_run"].includes(round.key);
+  const [showChangeRoundModal, setShowChangeRoundModal] = useState(false);
+
+  const handleSelectRound = (roundKey: string) => {
+    onChangeRound(roundKey);
+    setShowChangeRoundModal(false);
+  };
 
   return (
+    <>
+    {showChangeRoundModal && (
+        <ChangeRoundModal 
+            onClose={() => setShowChangeRoundModal(false)} 
+            onSelectRound={handleSelectRound}
+            players={players}
+            currentRoundKey={round.key}
+        />
+    )}
     <div className="min-h-screen flex flex-col items-center justify-start p-4 pt-16 sm:pt-24">
       <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 space-y-6">
         <div className="text-center">
@@ -48,14 +64,20 @@ const RoundWinnerSelection: React.FC<RoundWinnerSelectionProps> = ({ players, cu
           ))}
         </div>
         
-        {canSkip && (
+        <div className="space-y-3">
+             <button
+                onClick={() => setShowChangeRoundModal(true)}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+                {t('changeRound')}
+            </button>
              <button
                 onClick={onSkipRound}
                 className="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
             >
                 {t('skipRound')}
             </button>
-        )}
+        </div>
 
         <div className="pt-4 border-t border-gray-200">
              <button
@@ -67,6 +89,7 @@ const RoundWinnerSelection: React.FC<RoundWinnerSelectionProps> = ({ players, cu
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -83,7 +83,7 @@ const Standings: React.FC<StandingsProps> = ({ players, currentRound, activeRoun
                     <table className="w-full text-sm text-left text-gray-600">
                         <thead className="text-xs text-gray-500 uppercase bg-gray-200/80">
                         <tr>
-                            <th scope="col" className="px-6 py-3">{t('round')}</th>
+                            <th scope="col" className="px-6 py-3 w-1">{t('round')}</th>
                             {players.map(player => (
                             <th key={player.id} scope="col" className="px-6 py-3 text-center">{player.name}</th>
                             ))}

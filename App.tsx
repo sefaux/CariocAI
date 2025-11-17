@@ -13,6 +13,7 @@ import { useTranslation } from './hooks/useTranslation';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const SETTINGS_KEY = 'cariocaGameSettings';
+const GAME_STATE_KEY = 'cariocaGameState';
 
 const App: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [currentRound, setCurrentRound] = useState(0);
   const [roundWinnerId, setRoundWinnerId] = useState<number | null>(null);
   const { t } = useTranslation();
+  const [savedGameExists, setSavedGameExists] = useState(false);
   
   const [gameSettings, setGameSettings] = useState<GameSettings>(() => {
     try {
@@ -48,11 +50,43 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
+      const savedStateJSON = localStorage.getItem(GAME_STATE_KEY);
+      if (savedStateJSON) {
+        const savedState = JSON.parse(savedStateJSON);
+        if (savedState.players && savedState.players.length > 0) {
+          setSavedGameExists(true);
+        } else {
+          localStorage.removeItem(GAME_STATE_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(GAME_STATE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
     } catch (error) {
         console.error("Failed to save settings to localStorage", error);
     }
   }, [gameSettings]);
+  
+  useEffect(() => {
+    if (gamePhase !== GamePhase.Setup && players.length > 0) {
+      try {
+        const gameState = { players, gamePhase, currentRound, roundWinnerId, roundScores };
+        localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+        setSavedGameExists(true);
+      } catch (error) {
+        console.error("Failed to save game state", error);
+      }
+    } else if (gamePhase === GamePhase.Setup) {
+      localStorage.removeItem(GAME_STATE_KEY);
+      setSavedGameExists(false);
+    }
+  }, [players, gamePhase, currentRound, roundWinnerId, roundScores]);
+
 
   const activeRounds = ROUNDS_DATA.filter(r => gameSettings.enabledRounds.includes(r.key));
 
@@ -71,7 +105,32 @@ const App: React.FC = () => {
 
   const handleStartGame = () => {
     if (players.length >= 2 && activeRounds.length > 0) {
+      const initialPlayers = players.map(p => ({
+        ...p,
+        scores: Array(ROUNDS_DATA.length).fill(null),
+      }));
+      setPlayers(initialPlayers);
+      setCurrentRound(0);
+      setRoundWinnerId(null);
       setGamePhase(GamePhase.WinnerSelection);
+    }
+  };
+
+  const handleContinueGame = () => {
+    try {
+      const savedStateJSON = localStorage.getItem(GAME_STATE_KEY);
+      if (savedStateJSON) {
+        const savedState = JSON.parse(savedStateJSON);
+        setPlayers(savedState.players || []);
+        setGamePhase(savedState.gamePhase || GamePhase.Setup);
+        setCurrentRound(savedState.currentRound || 0);
+        setRoundWinnerId(savedState.roundWinnerId || null);
+        setRoundScores(savedState.roundScores || {});
+      }
+    } catch (error) {
+      console.error("Failed to load game state", error);
+      localStorage.removeItem(GAME_STATE_KEY);
+      setSavedGameExists(false);
     }
   };
   
@@ -137,6 +196,28 @@ const App: React.FC = () => {
     setCurrentRound(0);
     setRoundWinnerId(null);
     setGamePhase(GamePhase.Setup);
+  };
+
+  const handleChangeRound = (newRoundKey: string) => {
+    const currentRoundKey = activeRounds[currentRound].key;
+    if (newRoundKey === currentRoundKey) return;
+
+    let newEnabledRounds = [...gameSettings.enabledRounds];
+    if (!newEnabledRounds.includes(newRoundKey)) {
+        newEnabledRounds.push(newRoundKey);
+    }
+
+    const orderedEnabledRounds = ROUNDS_DATA
+      .map(r => r.key)
+      .filter(key => newEnabledRounds.includes(key));
+    
+    const newActiveRounds = ROUNDS_DATA.filter(r => orderedEnabledRounds.includes(r.key));
+    const newCurrentRoundIndex = newActiveRounds.findIndex(r => r.key === newRoundKey);
+
+    if (newCurrentRoundIndex !== -1) {
+        setGameSettings(prev => ({ ...prev, enabledRounds: orderedEnabledRounds }));
+        setCurrentRound(newCurrentRoundIndex);
+    }
   };
 
   // --- Scanning Flow Handlers ---
@@ -236,9 +317,9 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (gamePhase) {
       case GamePhase.Setup:
-        return <PlayerSetup players={players} onAddPlayer={handleAddPlayer} onRemovePlayer={handleRemovePlayer} onStartGame={handleStartGame} gameSettings={gameSettings} setGameSettings={setGameSettings} />;
+        return <PlayerSetup players={players} onAddPlayer={handleAddPlayer} onRemovePlayer={handleRemovePlayer} onStartGame={handleStartGame} gameSettings={gameSettings} setGameSettings={setGameSettings} onContinueGame={handleContinueGame} savedGameExists={savedGameExists} />;
       case GamePhase.WinnerSelection:
-        return <RoundWinnerSelection players={players} currentRound={currentRound} onSelectWinner={handleSelectWinner} onNewGame={handleNewGame} onSkipRound={handleSkipRound} activeRounds={activeRounds} />;
+        return <RoundWinnerSelection players={players} currentRound={currentRound} onSelectWinner={handleSelectWinner} onNewGame={handleNewGame} onSkipRound={handleSkipRound} activeRounds={activeRounds} onChangeRound={handleChangeRound} />;
       case GamePhase.ScoreInput:
         if (roundWinnerId === null) {
             setGamePhase(GamePhase.WinnerSelection);

@@ -15,6 +15,7 @@ export const es = {
   language: 'Idioma',
   rounds: 'Rondas',
   scores: 'Puntajes',
+  continueGame: 'Continuar Juego',
 
   // RoundWinnerSelection
   round: 'Ronda',
@@ -23,6 +24,8 @@ export const es = {
   skipRound: 'Saltar Ronda',
   startNewGame: 'Empezar Nuevo Juego',
   thirteenCardRoundInfo: 'ⓘ En esta ronda se reparten 13 cartas.',
+  changeRound: 'Cambiar Ronda',
+  completed: 'Completada',
 
   // RoundScoreInput
   scorePoints: 'Puntos',
@@ -50,6 +53,7 @@ export const es = {
   cameraAccessError: 'No se pudo acceder a la cámara. Revisa los permisos.',
   scannerHelperText: 'Asegúrate de que todas las cartas estén visibles y cerca del lente.',
   cancel: 'Cancelar',
+  uploadPhoto: 'Subir Foto',
 
   // ScanConfirmation
   confirmScore: 'Confirmar Puntaje',
