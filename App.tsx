@@ -271,7 +271,7 @@ const App: React.FC = () => {
             model,
             contents: {
                 parts: [
-                    { text: "Identify all standard playing cards (A, 2-10, J, Q, K) and jokers in this image. If a card cannot be clearly identified as one of these, classify its rank as 'Joker'. Provide the output in the requested JSON format." },
+                    { text: "Analyze the playing cards in this image. Identify the rank and suit for each. Valid ranks: A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker. Valid suits: Hearts, Diamonds, Clubs, Spades, Joker. CRITICAL RULE: If a card is blurry, partially obscured, or its rank cannot be identified with high confidence, you MUST classify its rank as 'Joker'. Do not fail the request for any unidentifiable card. Provide the output in the requested JSON format." },
                     { inlineData: { mimeType: 'image/jpeg', data: imageData.split(',')[1] } }
                 ]
             },
