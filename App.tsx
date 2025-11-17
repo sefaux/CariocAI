@@ -48,22 +48,31 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check for a saved game only once on initial mount
   useEffect(() => {
     try {
       const savedStateJSON = localStorage.getItem(GAME_STATE_KEY);
       if (savedStateJSON) {
         const savedState = JSON.parse(savedStateJSON);
-        if (savedState.players && savedState.players.length > 0) {
+        // A valid saved game must have players and not be in the setup phase.
+        if (savedState.players && savedState.players.length > 0 && savedState.gamePhase !== GamePhase.Setup) {
           setSavedGameExists(true);
         } else {
+          // Clean up invalid or obsolete game states from storage.
           localStorage.removeItem(GAME_STATE_KEY);
+          setSavedGameExists(false);
         }
+      } else {
+        setSavedGameExists(false);
       }
     } catch {
+      // If parsing fails, the stored data is corrupt, so clean it up.
       localStorage.removeItem(GAME_STATE_KEY);
+      setSavedGameExists(false);
     }
   }, []);
 
+  // Save game settings whenever they change
   useEffect(() => {
     try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(gameSettings));
@@ -72,12 +81,12 @@ const App: React.FC = () => {
     }
   }, [gameSettings]);
   
+  // Save game state whenever it changes, but only if the game is active.
   useEffect(() => {
     if (gamePhase !== GamePhase.Setup && players.length > 0) {
       try {
         const gameState = { players, gamePhase, currentRound, roundWinnerId, roundScores };
         localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
-        setSavedGameExists(true);
       } catch (error) {
         console.error("Failed to save game state", error);
       }
@@ -101,6 +110,10 @@ const App: React.FC = () => {
   };
 
   const handleStartGame = () => {
+    // Explicitly clear any previous game state when starting a new game.
+    localStorage.removeItem(GAME_STATE_KEY);
+    setSavedGameExists(false);
+
     if (players.length >= 2 && activeRounds.length > 0) {
       const initialPlayers = players.map(p => ({
         ...p,
@@ -266,13 +279,16 @@ const App: React.FC = () => {
             }
         };
 
-        const prompt = `Your task is to identify playing cards from an image and return them as a JSON object. Follow these rules precisely:
-1. List all visible cards.
-2. For each card, identify its rank and suit.
+        const prompt = `Analyze the image to identify all playing cards.
+Your output MUST be a JSON object that strictly follows the provided schema.
+**CRITICAL INSTRUCTIONS TO AVOID ERRORS:**
+1. Your primary goal is to return a valid JSON response, NOT to fail.
+2. For every potential card you see, attempt to identify its rank and suit.
 3. Valid Ranks: 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'Joker'.
-4. Valid Suits: 'Hearts', 'Diamonds', 'Clubs', 'Spades', 'Joker'. A Joker card should have both rank and suit as 'Joker'.
-5. **Most Important Rule:** You must NOT fail. If a card is difficult to identify for any reason (e.g., it's blurry, angled, poorly lit, partially hidden, or unclear), you MUST classify its rank and suit as 'Joker'. It is better to return 'Joker' than to be uncertain or fail.
-6. Return your findings in the exact JSON format specified by the schema.`;
+4. Valid Suits: 'Hearts', 'Diamonds', 'Clubs', 'Spades', 'Joker'.
+5. **FAILURE AVOIDANCE RULE:** If you have ANY uncertainty about a card's rank or suit due to blur, angle, lighting, or any other issue, you MUST classify that card's rank AND suit as 'Joker'.
+6. If you cannot identify any cards at all, you MUST return a JSON object with an empty 'cards' array: {"cards": []}.
+7. DO NOT output any text or explanation outside of the JSON structure. Your entire response must be the JSON object.`;
 
         const response = await ai.models.generateContent({
             model,
