@@ -290,7 +290,7 @@ const App: React.FC = () => {
         setGamePhase(GamePhase.ScanConfirmation);
 
     } catch (e) {
-        console.error(e);
+        console.error("Card recognition API error:", e);
         setError(t('cardRecognitionError'));
         setScanningPlayerId(null); 
     } finally {
